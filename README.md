@@ -88,13 +88,3 @@ client.get('private/posts/', function(err, res, body) {
 });
 
 ```
-
-## Who uses it
-
-request-json is downloaded more than 5000 times each month. Here are the
-companies which use it for their API clients:
-
-* [Cozy Cloud](http://cozy.io) Personal Cloud Solutions
-* [LeanKit](http://leankit.com/) Team Collaboration Solutions
-* [Forecast](http://forecast.io/) Weather Forecasting
-* [JS Report](http://jsreport.net/) Reporting Platform

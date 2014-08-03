@@ -13,17 +13,12 @@ and that way provides as many features (but with more dependencies!).
 
 Add it to your package.json file or run in your project folder:
 
-    npm install request-json
-
-## Build status
-
-[![Build
-Status](https://travis-ci.org/mycozycloud/request-json.png?branch=master)](https://travis-ci.org/mycozycloud/request-json)
+    npm install request-json-light
 
 ## How it works
 
 ```javascript
-request = require('request-json');
+request = require('request-json-light');
 var client = request.newClient('http://localhost:8888/');
 
 var data = {

@@ -157,7 +157,7 @@ class JsonClient
             callback = options
             options = {}
 
-        if typeof options is 'function'
+        if typeof data is 'function'
             parse = options if typeof options is 'boolean'
             callback = data
             data = {}

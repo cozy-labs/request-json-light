@@ -2,6 +2,7 @@ FormData = require "form-data"
 fs = require "fs"
 url = require "url"
 http = require 'http'
+https = require 'https'
 
 
 # Merge two objects in one. Values from the second object win over the first
@@ -37,6 +38,7 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
     urlData = url.parse host
     options.host = urlData.host.split(':')[0]
     options.port = urlData.port
+    options.protocol = urlData.protocol
     options.path = path
 
     options
@@ -67,7 +69,14 @@ playRequest = (opts, data, callback) ->
     if data?
         opts.headers['content-size'] = data.length
 
-    req = http.request opts, (res) ->
+    protocol = http
+    if opts.protocol is 'https:'
+        protocol = https
+        opts.port = 443 unless opts.port?
+    else
+        opts.port = 80 unless opts.port?
+
+    req = protocol.request opts, (res) ->
         res.setEncoding 'utf8'
 
         body = ''

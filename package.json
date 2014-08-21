@@ -34,7 +34,7 @@
     "Benjamin Woodruff"
   ],
   "engines": {
-    "node": ">=1.10.0"
+    "node": ">= 0.10.0"
   },
   "main": "./main.js",
   "dependencies": {

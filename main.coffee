@@ -256,8 +256,8 @@ class JsonClient
         if typeof file is "string"
             filePipe = fs.createReadStream(file)
 
-        # file is not a string and is not an array so it is a stream
-        else if not Array.isArray file
+        # file is not a string so it should be a stream.
+        else
             filePipe = file
 
         req = opts.requestFactory.request opts, (res) ->

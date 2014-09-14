@@ -2,6 +2,7 @@ FormData = require "form-data"
 fs = require "fs"
 url = require "url"
 http = require 'http'
+https = require 'https'
 
 
 # Merge two objects in one. Values from the second object win over the first
@@ -38,6 +39,11 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
     options.host = urlData.host.split(':')[0]
     options.port = urlData.port
     options.path = path
+    if urlData.protocol is 'https:'
+        options.requestFactory = https
+        options.rejectUnauthorized = false
+    else
+        options.requestFactory = http
 
     options
 
@@ -67,7 +73,7 @@ playRequest = (opts, data, callback) ->
     if data?
         opts.headers['content-size'] = data.length
 
-    req = http.request opts, (res) ->
+    req = opts.requestFactory.request opts, (res) ->
         res.setEncoding 'utf8'
 
         body = ''
@@ -125,7 +131,6 @@ class JsonClient
         @headers['accept'] = 'application/json'
         @headers['user-agent'] = "request-json/1.0"
         @headers['content-type'] = 'application/json'
-
 
     # Set basic authentication on each requests
     setBasicAuth: (username, password) ->
@@ -249,10 +254,10 @@ class JsonClient
         opts = buildOptions @options, @headers, @host, path, options
         opts.option = "GET"
 
-        req = http.request opts, (res) ->
-            res.pipe fs.createWriteStream filePath
-
-            res.on 'end', ->
+        req = opts.requestFactory.request opts, (res) ->
+            writeStream = fs.createWriteStream filePath
+            res.pipe writeStream
+            writeStream.on 'finish', ->
                 callback null, res
 
         req.on 'error', (err)  ->
@@ -267,7 +272,7 @@ class JsonClient
         opts = buildOptions @options, @headers, @host, path, options
         opts.option = "GET"
 
-        req = http.request opts, (res) ->
+        req =  opts.requestFactory.request opts, (res) ->
             callback null, res
 
         req.on 'error', (err)  ->

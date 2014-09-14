@@ -1,5 +1,6 @@
 should = require('chai').Should()
 http = require "http"
+https = require "https"
 express = require "express"
 fs = require "fs"
 bodyParser = require 'body-parser'
@@ -25,10 +26,18 @@ fakeServerRaw = (code, out) ->
             res.writeHead code
             res.end out
 
+fakeServerRawHttps = (code, out) ->
+    options =
+        key: fs.readFileSync 'server.key'
+        cert: fs.readFileSync 'server.crt'
+     https.createServer options, (req, res) ->
+        res.writeHead code
+        res.end JSON.stringify out
+
 fakeDownloadServer = (url, path, callback= ->) ->
     app = express()
     app.get url, (req, res) ->
-        res.sendfile path
+        fs.createReadStream(path).pipe res
         callback req
 
 fakeUploadServer = (url, dir, callback= -> ) ->
@@ -241,7 +250,7 @@ describe "Files", ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I send get request to server", (done) ->
+        it "When I attempt to save file", (done) ->
             @client.saveFile 'test-file', './dl-README.md', \
                              (error, response, body) =>
                 should.not.exist error
@@ -264,12 +273,13 @@ describe "Files", ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I send get request to server", (done) ->
+        it "When I attempt to save file via a stream", (done) ->
             @client.saveFileAsStream 'test-file', (err, stream) =>
                 should.not.exist err
                 stream.statusCode.should.be.equal 200
-                stream.pipe fs.createWriteStream './dl-README.md'
-                stream.on 'end', ->
+                fsPipe = fs.createWriteStream './dl-README.md'
+                stream.pipe fsPipe
+                fsPipe.on 'finish', ->
                     done()
 
         it "Then I receive the correct file", ->
@@ -529,3 +539,26 @@ describe "Set header on request", ->
     it "Then I get msg: ok as answer.", ->
         should.exist @body.msg
         @body.msg.should.equal "ok"
+
+describe "Request an https server", ->
+
+    describe "client.get", ->
+
+        before ->
+            @client = request.newClient "https://localhost:8889/"
+            @serverGet = fakeServerRawHttps 200, msg: 'https ok'
+            @serverGet.listen 8889
+
+        after ->
+            @serverGet.close()
+
+        it "When I send get request to server", (done) ->
+            @client.get "/", (error, response, body) =>
+                should.not.exist error
+                response.statusCode.should.be.equal 200
+                @body = body
+                done()
+
+        it "Then I get msg: ok as answer.", ->
+            should.exist @body.msg
+            @body.msg.should.equal "https ok"

@@ -49,8 +49,9 @@
     "connect-multiparty": "1.0.4"
   },
   "scripts": {
-    "prepublish": "cake build",
-    "test": "cake tests"
+    "prepublish": "npm run build",
+    "build": "coffee -cb main.coffee",
+    "test": "mocha tests.coffee --reporter spec --compilers coffee:coffee-script/register --colors"
   },
   "repository": {
     "type": "git",

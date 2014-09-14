@@ -247,10 +247,8 @@ class JsonClient
                 parseBody null, res, body, callback, parse
 
 
-    # Send a put request with file located at given path as attachment.
-    # Use a read stream for that.
-    # If you use a stream, it must have a "path" attribute...
-    # ...with its path or filename
+    # Send a put request with file located at given path as body.
+    # Do not use form, file is sent directly
     putFile: (path, file, callback, parse=true) ->
         opts = buildOptions @options, @headers, @host, path, method: 'PUT'
 

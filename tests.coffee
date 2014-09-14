@@ -1,6 +1,7 @@
 should = require('chai').Should()
 http = require "http"
 https = require "https"
+path = require 'path'
 express = require "express"
 fs = require "fs"
 bodyParser = require 'body-parser'
@@ -50,6 +51,22 @@ fakeUploadServer = (url, dir, callback= -> ) ->
             fs.renameSync file.path, dir + '/' + file.name
         res.send 201, creation: true
 
+rawBody = (req, res, next) ->
+    req.setEncoding 'utf8'
+    req.rawBody = ''
+    req.on 'data', (chunk) ->
+        req.rawBody += chunk
+    req.on 'end', () ->
+        next()
+
+fakePutServer = (url, dir, callback= -> ) ->
+    app = express()
+    fs.mkdirSync dir unless fs.existsSync dir
+    app.use rawBody
+    app.put url, (req, res) ->
+        fs.writeFile "#{dir}/file", req.rawBody, (err) ->
+            unless err
+                res.send 201
 
 describe "Common requests", ->
 
@@ -426,6 +443,33 @@ describe "Files", ->
             fileStats = fs.statSync './package.json'
             resultStats = fs.statSync './up/package.json'
             resultStats.size.should.equal fileStats.size
+
+    describe "client.putFile", ->
+
+        before ->
+            @app = fakePutServer '/test-file', './up'
+            @server = @app.listen 8888
+            @client = request.newClient "http://localhost:8888/"
+
+        after ->
+            for name in fs.readdirSync './up'
+                fs.unlinkSync(path.join './up', name)
+            fs.rmdirSync './up'
+            @server.close()
+
+        it "When I send put request to server", (done) ->
+            file = './README.md'
+            @client.putFile 'test-file', file, (error, response, body) =>
+                should.not.exist error
+                response.statusCode.should.be.equal 201
+                done()
+            , false
+
+        it "Then I receive the correct file", ->
+            fileStats = fs.statSync './README.md'
+            resultStats = fs.statSync './up/file'
+            resultStats.size.should.equal fileStats.size
+
 
 describe "Basic authentication", ->
 

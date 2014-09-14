@@ -50,8 +50,8 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
 
 # Parse body assuming the body is a json object. Send an error if the body
 # can't be parsed.
-parseBody =  (error, response, body, callback) ->
-    if typeof body is "string" and body isnt ""
+parseBody =  (error, response, body, callback, parse=true) ->
+    if typeof body is "string" and body isnt "" and parse
         try
             parsed = JSON.parse body
         catch err
@@ -64,7 +64,7 @@ parseBody =  (error, response, body, callback) ->
 
 
 # Generic command to play a simple request (withou streaming or form).
-playRequest = (opts, data, callback) ->
+playRequest = (opts, data, callback, parse=true) ->
 
     if typeof data is 'function'
         callback = data
@@ -79,7 +79,7 @@ playRequest = (opts, data, callback) ->
         body = ''
         res.on 'data', (chunk) -> body += chunk
         res.on 'end', ->
-            parseBody null, res, body, callback
+            parseBody null, res, body, callback, parse
 
     req.on 'error', (err) ->
         callback err
@@ -96,29 +96,29 @@ module.exports =
         new JsonClient url, options
 
 
-    get: (opts, data, callback) ->
+    get: (opts, data, callback, parse) ->
         opts.method = "GET"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    del: (opts, data, callback) ->
+    del: (opts, data, callback, parse) ->
         opts.method = "DELETE"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    post: (opts, data, callback) ->
+    post: (opts, data, callback, parse) ->
         opts.method = "POST"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    put: (opts, data, callback) ->
+    put: (opts, data, callback, parse) ->
         opts.method = "PUT"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    patch: (opts, data, callback) ->
+    patch: (opts, data, callback, parse) ->
         opts.method = "PATCH"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
 # Small HTTP client for easy json interactions with Cozy backends.
@@ -145,18 +145,18 @@ class JsonClient
 
 
     # Send a GET request to path. Parse response body to obtain a JS object.
-    get: (path, options, callback, parse = true) ->
+    get: (path, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.get opts, null, callback
+        module.exports.get opts, null, callback, parse
 
 
     # Send a POST request to path with given JSON as body.
-    post: (path, data, options, callback, parse = true) ->
+    post: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
@@ -173,36 +173,36 @@ class JsonClient
 
 
     # Send a PUT request to path with given JSON as body.
-    put: (path, data, options, callback, parse = true) ->
+    put: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.put opts, data, callback
+        module.exports.put opts, data, callback, parse
 
 
     # Send a PATCH request to path with given JSON as body.
-    patch: (path, data, options, callback, parse = true) ->
+    patch: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.patch opts, data, callback
+        module.exports.patch opts, data, callback, parse
 
 
     # Send a DELETE request to path.
-    del: (path, options, callback, parse = true) ->
+    del: (path, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.del opts, null, callback
+        module.exports.del opts, null, callback, parse
 
 
     # Send a post request with file located at given path as attachment
@@ -245,6 +245,37 @@ class JsonClient
 
             res.on 'end', ->
                 parseBody null, res, body, callback, parse
+
+
+    # Send a put request with file located at given path as attachment.
+    # Use a read stream for that.
+    # If you use a stream, it must have a "path" attribute...
+    # ...with its path or filename
+    putFile: (path, file, callback, parse=true) ->
+        opts = buildOptions @options, @headers, @host, path, method: 'PUT'
+
+        # file is a string so it is a file path
+        if typeof file is "string"
+            filePipe = fs.createReadStream(file)
+
+        # file is not a string and is not an array so it is a stream
+        else if not Array.isArray file
+            filePipe = file
+
+        req = opts.requestFactory.request opts, (res) ->
+            res.setEncoding 'utf8'
+
+            body = ''
+            res.on 'data', (chunk) -> body += chunk
+            res.on 'end', ->
+                console.log parse
+                parseBody null, res, body, callback, parse
+
+        req.on 'error', (err) ->
+            callback err
+
+        filePipe.pipe req
+
 
 
     # Retrieve file located at *path* and save it as *filePath*.

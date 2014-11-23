@@ -38,7 +38,8 @@
   },
   "main": "./main.js",
   "dependencies": {
-    "form-data": "0.1.4"
+    "form-data": "0.1.4",
+    "node-mime": "^1.0.0"
   },
   "devDependencies": {
     "coffee-script": "1.7.1",

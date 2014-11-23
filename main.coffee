@@ -3,6 +3,7 @@ fs = require "fs"
 url = require "url"
 http = require 'http'
 https = require 'https'
+mime = require "mime"
 
 
 # Merge two objects in one. Values from the second object win over the first
@@ -253,6 +254,7 @@ class JsonClient
     # Do not use form, file is sent directly
     putFile: (path, file, callback, parse=true) ->
         opts = buildOptions @options, @headers, @host, path, method: 'PUT'
+        opts.headers['content-type'] = mime.lookup file
 
         # file is a string so it is a file path
         if typeof file is "string"

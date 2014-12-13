@@ -270,7 +270,6 @@ class JsonClient
             body = ''
             res.on 'data', (chunk) -> body += chunk
             res.on 'end', ->
-                console.log parse
                 parseBody null, res, body, callback, parse
 
         req.on 'error', (err) ->

@@ -258,11 +258,11 @@ class JsonClient
 
         # file is a string so it is a file path
         if typeof file is "string"
-            filePipe = fs.createReadStream(file)
+            fileStream = fs.createReadStream(file)
 
         # file is not a string so it should be a stream.
         else
-            filePipe = file
+            fileStream = file
 
         req = opts.requestFactory.request opts, (res) ->
             res.setEncoding 'utf8'
@@ -275,7 +275,8 @@ class JsonClient
         req.on 'error', (err) ->
             callback err
 
-        filePipe.pipe req
+        reqStream = fileStream.pipe req
+        {reqStream, fileStream}
 
 
 

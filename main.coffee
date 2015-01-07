@@ -288,15 +288,16 @@ class JsonClient
         opts.option = "GET"
 
         req = opts.requestFactory.request opts, (res) ->
-            writeStream = fs.createWriteStream filePath
-            res.pipe writeStream
-            writeStream.on 'finish', ->
+            fileStream = fs.createWriteStream filePath
+            res.pipe fileStream
+            fileStream.on 'finish', ->
                 callback null, res
 
         req.on 'error', (err)  ->
             callback err
 
         req.end()
+        {resStream, fileStream}
 
 
     # Retrieve file located at *path* and return it as stream.

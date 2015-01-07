@@ -205,7 +205,7 @@ class JsonClient
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.del opts, {}, callback, parse
+        module.exports.del opts, null callback, parse
 
 
     # Send a post request with file located at given path as attachment

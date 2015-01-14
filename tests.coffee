@@ -217,6 +217,34 @@ describe "Common requests", ->
         it "Then I get 204 as answer", ->
             @response.statusCode.should.be.equal 204
 
+    describe "client.get followed by client.post", ->
+        before ->
+            first = true
+            @server = fakeServer msg:"ok", 200, (body, req) ->
+                if first
+                    first = false
+                    req.method.should.equal "GET"
+                else
+                    req.method.should.equal "POST"
+                    req.headers.should.have.property 'content-type'
+                    contentType = req.headers['content-type']
+                    contentType.should.equal 'application/json'
+
+            @server.listen 8888
+            @client = request.newClient "http://localhost:8888/"
+
+        after ->
+            @server.close()
+
+        it "When I send get request to server", (done) ->
+            @client.get "test-path/123", (error, response, body) =>
+                done()
+
+        it "And then send delete request to server", (done) ->
+            @client.post "test-path/123", (error, response, body) =>
+                done()
+
+
 describe "Parsing edge cases", ->
 
     describe "no body on 204", ->

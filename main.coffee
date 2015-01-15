@@ -32,7 +32,9 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
 
     # If no additional headers are given, it uses the client headers directly.
     else
-        options.headers = clientHeaders
+        # we clone clientHeaders because playRequest mutate them
+        # (delete content-type when there is no data)
+        options.headers = merge clientHeaders, {}
 
     # Buuld host parameters from given URL.
     path = "/#{path}" if path[0] isnt '/'
@@ -205,7 +207,7 @@ class JsonClient
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.del opts, null callback, parse
+        module.exports.del opts, null, callback, parse
 
 
     # Send a post request with file located at given path as attachment
@@ -297,7 +299,6 @@ class JsonClient
             callback err
 
         req.end()
-        {resStream, fileStream}
 
 
     # Retrieve file located at *path* and return it as stream.

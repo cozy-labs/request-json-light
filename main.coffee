@@ -240,7 +240,20 @@ class JsonClient
                 else
                     form.append "file#{index}", file
 
-        form.submit url.resolve(@host, path), (err, res) ->
+        # build form data options from @options
+        options = buildOptions @options, @headers, @host, path, method: 'POST'
+
+        # the form will have a multipart content-type, formdata handles it
+        delete options.headers['content-type']
+
+        # formdata expects a 'https:' options protocol
+        if options.requestFactory is https
+            options.protocol = 'https:'
+        delete options.requestFactory
+
+        form.submit options, (err, res) ->
+            return callback err if err
+
             res.setEncoding 'utf8'
 
             body = ''

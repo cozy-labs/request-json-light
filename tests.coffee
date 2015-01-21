@@ -49,7 +49,7 @@ fakeUploadServer = (url, dir, callback= -> ) ->
     app.post url, (req, res) ->
         for key, file of req.files
             fs.renameSync file.path, dir + '/' + file.name
-        res.send 201, creation: true
+        res.send 201, creation: true, requestHeaders: req.headers
 
 rawBody = (req, res, next) ->
     req.setEncoding 'utf8'
@@ -347,9 +347,12 @@ describe "Files", ->
 
         it "When I send post request to server", (done) ->
             file = './README.md'
+            @client.setBasicAuth 'a', 'b'
             @client.sendFile 'test-file', file, (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 201
+                body.requestHeaders.should.have.property 'authorization'
+                body.requestHeaders['authorization'].should.equal 'Basic YTpi'
                 done()
 
         it "Then I receive the correct file", ->

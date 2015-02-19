@@ -74,6 +74,10 @@ playRequest = (opts, data, callback, parse=true) ->
         data = {}
 
     if data?
+        if typeof data is 'string'
+            length = data.length
+        else
+            length = JSON.stringify(data).length
         opts.headers['content-size'] = data.length
     else
         delete opts.headers['content-type']

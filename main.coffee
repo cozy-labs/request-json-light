@@ -78,7 +78,7 @@ playRequest = (opts, data, callback, parse=true) ->
             length = data.length
         else
             length = JSON.stringify(data).length
-        opts.headers['content-size'] = data.length
+        opts.headers['content-size'] = length
     else
         delete opts.headers['content-type']
 
@@ -86,7 +86,8 @@ playRequest = (opts, data, callback, parse=true) ->
         res.setEncoding 'utf8'
 
         body = ''
-        res.on 'data', (chunk) -> body += chunk
+        res.on 'data', (chunk) ->
+            body += chunk
         res.on 'end', ->
             parseBody null, res, body, callback, parse
 

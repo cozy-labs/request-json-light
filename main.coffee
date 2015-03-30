@@ -233,6 +233,7 @@ class JsonClient
 
         # files is not a string and is not an array so it is a stream
         else if not Array.isArray files
+            files.path = files.path || "useless_But_Required_String" #require by formData
             form.append "file", files
 
         # files is an array of strings and streams

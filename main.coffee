@@ -3,6 +3,7 @@ fs = require "fs"
 url = require "url"
 http = require 'http'
 https = require 'https'
+mime = require "mime"
 
 
 # Merge two objects in one. Values from the second object win over the first
@@ -31,7 +32,9 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
 
     # If no additional headers are given, it uses the client headers directly.
     else
-        options.headers = clientHeaders
+        # we clone clientHeaders because playRequest mutate them
+        # (delete content-type when there is no data)
+        options.headers = merge clientHeaders, {}
 
     # Buuld host parameters from given URL.
     path = "/#{path}" if path[0] isnt '/'
@@ -40,14 +43,19 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
     options.port = urlData.port
     options.protocol = urlData.protocol
     options.path = path
+    if urlData.protocol is 'https:'
+        options.requestFactory = https
+        options.rejectUnauthorized = false
+    else
+        options.requestFactory = http
 
     options
 
 
 # Parse body assuming the body is a json object. Send an error if the body
 # can't be parsed.
-parseBody =  (error, response, body, callback) ->
-    if typeof body is "string" and body isnt ""
+parseBody =  (error, response, body, callback, parse=true) ->
+    if typeof body is "string" and body isnt "" and parse
         try
             parsed = JSON.parse body
         catch err
@@ -60,29 +68,29 @@ parseBody =  (error, response, body, callback) ->
 
 
 # Generic command to play a simple request (withou streaming or form).
-playRequest = (opts, data, callback) ->
+playRequest = (opts, data, callback, parse=true) ->
 
     if typeof data is 'function'
         callback = data
         data = {}
 
     if data?
-        opts.headers['content-size'] = data.length
-
-    protocol = http
-    if opts.protocol is 'https:'
-        protocol = https
-        opts.port = 443 unless opts.port?
+        if typeof data is 'string'
+            length = data.length
+        else
+            length = JSON.stringify(data).length
+        opts.headers['Content-Length'] = length
     else
-        opts.port = 80 unless opts.port?
+        delete opts.headers['Content-Length']
 
-    req = protocol.request opts, (res) ->
+    req = opts.requestFactory.request opts, (res) ->
         res.setEncoding 'utf8'
 
         body = ''
-        res.on 'data', (chunk) -> body += chunk
+        res.on 'data', (chunk) ->
+            body += chunk
         res.on 'end', ->
-            parseBody null, res, body, callback
+            parseBody null, res, body, callback, parse
 
     req.on 'error', (err) ->
         callback err
@@ -99,29 +107,29 @@ module.exports =
         new JsonClient url, options
 
 
-    get: (opts, data, callback) ->
+    get: (opts, data, callback, parse) ->
         opts.method = "GET"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    del: (opts, data, callback) ->
+    del: (opts, data, callback, parse) ->
         opts.method = "DELETE"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    post: (opts, data, callback) ->
+    post: (opts, data, callback, parse) ->
         opts.method = "POST"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    put: (opts, data, callback) ->
+    put: (opts, data, callback, parse) ->
         opts.method = "PUT"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
-    patch: (opts, data, callback) ->
+    patch: (opts, data, callback, parse) ->
         opts.method = "PATCH"
-        playRequest opts, data, callback
+        playRequest opts, data, callback, parse
 
 
     head: (opts, data, callback) ->
@@ -140,7 +148,6 @@ class JsonClient
         @headers['user-agent'] = "request-json/1.0"
         @headers['content-type'] = 'application/json'
 
-
     # Set basic authentication on each requests
     setBasicAuth: (username, password) ->
         credentials = "#{username}:#{password}"
@@ -154,18 +161,18 @@ class JsonClient
 
 
     # Send a GET request to path. Parse response body to obtain a JS object.
-    get: (path, options, callback, parse = true) ->
+    get: (path, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.get opts, null, callback
+        module.exports.get opts, null, callback, parse
 
 
     # Send a POST request to path with given JSON as body.
-    post: (path, data, options, callback, parse = true) ->
+    post: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
@@ -182,36 +189,36 @@ class JsonClient
 
 
     # Send a PUT request to path with given JSON as body.
-    put: (path, data, options, callback, parse = true) ->
+    put: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.put opts, data, callback
+        module.exports.put opts, data, callback, parse
 
 
     # Send a PATCH request to path with given JSON as body.
-    patch: (path, data, options, callback, parse = true) ->
+    patch: (path, data, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.patch opts, data, callback
+        module.exports.patch opts, data, callback, parse
 
 
     # Send a DELETE request to path.
-    del: (path, options, callback, parse = true) ->
+    del: (path, options, callback, parse=true) ->
         if typeof options is 'function'
             parse = callback if typeof callback is 'boolean'
             callback = options
             options = {}
 
         opts = buildOptions @options, @headers, @host, path, options
-        module.exports.del opts, null, callback
+        module.exports.del opts, null, callback, parse
 
 
     # Send a HEAD request to path with given JSON as body.
@@ -243,6 +250,7 @@ class JsonClient
 
         # files is not a string and is not an array so it is a stream
         else if not Array.isArray files
+            files.path = files.path || "useless_But_Required_String" #require by formData
             form.append "file", files
 
         # files is an array of strings and streams
@@ -255,7 +263,20 @@ class JsonClient
                 else
                     form.append "file#{index}", file
 
-        form.submit url.resolve(@host, path), (err, res) ->
+        # build form data options from @options
+        options = buildOptions @options, @headers, @host, path, method: 'POST'
+
+        # the form will have a multipart content-type, formdata handles it
+        delete options.headers['content-type']
+
+        # formdata expects a 'https:' options protocol
+        if options.requestFactory is https
+            options.protocol = 'https:'
+        delete options.requestFactory
+
+        form.submit options, (err, res) ->
+            return callback err if err
+
             res.setEncoding 'utf8'
 
             body = ''
@@ -267,6 +288,36 @@ class JsonClient
                 parseBody null, res, body, callback, parse
 
 
+    # Send a put request with file located at given path as body.
+    # Do not use form, file is sent directly
+    putFile: (path, file, callback, parse=true) ->
+        opts = buildOptions @options, @headers, @host, path, method: 'PUT'
+        opts.headers['content-type'] = mime.lookup file
+
+        # file is a string so it is a file path
+        if typeof file is "string"
+            fileStream = fs.createReadStream(file)
+
+        # file is not a string so it should be a stream.
+        else
+            fileStream = file
+
+        req = opts.requestFactory.request opts, (res) ->
+            res.setEncoding 'utf8'
+
+            body = ''
+            res.on 'data', (chunk) -> body += chunk
+            res.on 'end', ->
+                parseBody null, res, body, callback, parse
+
+        req.on 'error', (err) ->
+            callback err
+
+        reqStream = fileStream.pipe req
+        {reqStream, fileStream}
+
+
+
     # Retrieve file located at *path* and save it as *filePath*.
     # Use a write stream for that.
     saveFile: (path, filePath, callback) ->
@@ -274,10 +325,10 @@ class JsonClient
         opts = buildOptions @options, @headers, @host, path, options
         opts.option = "GET"
 
-        req = http.request opts, (res) ->
-            res.pipe fs.createWriteStream filePath
-
-            res.on 'end', ->
+        req = opts.requestFactory.request opts, (res) ->
+            fileStream = fs.createWriteStream filePath
+            res.pipe fileStream
+            fileStream.on 'finish', ->
                 callback null, res
 
         req.on 'error', (err)  ->
@@ -292,7 +343,7 @@ class JsonClient
         opts = buildOptions @options, @headers, @host, path, options
         opts.option = "GET"
 
-        req = http.request opts, (res) ->
+        req =  opts.requestFactory.request opts, (res) ->
             callback null, res
 
         req.on 'error', (err)  ->

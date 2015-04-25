@@ -1,5 +1,7 @@
 should = require('chai').Should()
 http = require "http"
+https = require "https"
+path = require 'path'
 express = require "express"
 fs = require "fs"
 bodyParser = require 'body-parser'
@@ -26,10 +28,18 @@ fakeServerRaw = (code, out) ->
             res.writeHead code
             res.end out
 
+fakeServerRawHttps = (code, out) ->
+    options =
+        key: fs.readFileSync 'server.key'
+        cert: fs.readFileSync 'server.crt'
+     https.createServer options, (req, res) ->
+        res.writeHead code
+        res.end JSON.stringify out
+
 fakeDownloadServer = (url, path, callback= ->) ->
     app = express()
     app.get url, (req, res) ->
-        res.sendfile path
+        fs.createReadStream(path).pipe res
         callback req
 
 fakeUploadServer = (url, dir, callback= -> ) ->
@@ -40,8 +50,24 @@ fakeUploadServer = (url, dir, callback= -> ) ->
     app.post url, (req, res) ->
         for key, file of req.files
             fs.renameSync file.path, dir + '/' + file.name
-        res.send 201, creation: true
+        res.send 201, creation: true, requestHeaders: req.headers
 
+rawBody = (req, res, next) ->
+    req.setEncoding 'utf8'
+    req.rawBody = ''
+    req.on 'data', (chunk) ->
+        req.rawBody += chunk
+    req.on 'end', () ->
+        next()
+
+fakePutServer = (url, dir, callback= -> ) ->
+    app = express()
+    fs.mkdirSync dir unless fs.existsSync dir
+    app.use rawBody
+    app.put url, (req, res) ->
+        fs.writeFile "#{dir}/file", req.rawBody, (err) ->
+            unless err
+                res.send 201
 
 describe "Common requests", ->
 
@@ -219,6 +245,34 @@ describe "Common requests", ->
         it "Then I get 204 as answer", ->
             @response.statusCode.should.be.equal 204
 
+    describe "client.get followed by client.post", ->
+        before ->
+            first = true
+            @server = fakeServer msg:"ok", 200, (body, req) ->
+                if first
+                    first = false
+                    req.method.should.equal "GET"
+                else
+                    req.method.should.equal "POST"
+                    req.headers.should.have.property 'content-type'
+                    contentType = req.headers['content-type']
+                    contentType.should.equal 'application/json'
+
+            @server.listen 8888
+            @client = request.newClient "http://localhost:8888/"
+
+        after ->
+            @server.close()
+
+        it "When I send get request to server", (done) ->
+            @client.get "test-path/123", (error, response, body) =>
+                done()
+
+        it "And then send delete request to server", (done) ->
+            @client.post "test-path/123", (error, response, body) =>
+                done()
+
+
 describe "Parsing edge cases", ->
 
     describe "no body on 204", ->
@@ -269,7 +323,7 @@ describe "Files", ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I send get request to server", (done) ->
+        it "When I attempt to save file", (done) ->
             @client.saveFile 'test-file', './dl-README.md', \
                              (error, response, body) =>
                 should.not.exist error
@@ -292,12 +346,13 @@ describe "Files", ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I send get request to server", (done) ->
+        it "When I attempt to save file via a stream", (done) ->
             @client.saveFileAsStream 'test-file', (err, stream) =>
                 should.not.exist err
                 stream.statusCode.should.be.equal 200
-                stream.pipe fs.createWriteStream './dl-README.md'
-                stream.on 'end', ->
+                fsPipe = fs.createWriteStream './dl-README.md'
+                stream.pipe fsPipe
+                fsPipe.on 'finish', ->
                     done()
 
         it "Then I receive the correct file", ->
@@ -320,9 +375,12 @@ describe "Files", ->
 
         it "When I send post request to server", (done) ->
             file = './README.md'
+            @client.setBasicAuth 'a', 'b'
             @client.sendFile 'test-file', file, (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 201
+                body.requestHeaders.should.have.property 'authorization'
+                body.requestHeaders['authorization'].should.equal 'Basic YTpi'
                 done()
 
         it "Then I receive the correct file", ->
@@ -445,6 +503,33 @@ describe "Files", ->
             resultStats = fs.statSync './up/package.json'
             resultStats.size.should.equal fileStats.size
 
+    describe "client.putFile", ->
+
+        before ->
+            @app = fakePutServer '/test-file', './up'
+            @server = @app.listen 8888
+            @client = request.newClient "http://localhost:8888/"
+
+        after ->
+            for name in fs.readdirSync './up'
+                fs.unlinkSync(path.join './up', name)
+            fs.rmdirSync './up'
+            @server.close()
+
+        it "When I send put request to server", (done) ->
+            file = './README.md'
+            @client.putFile 'test-file', file, (error, response, body) =>
+                should.not.exist error
+                response.statusCode.should.be.equal 201
+                done()
+            , false
+
+        it "Then I receive the correct file", ->
+            fileStats = fs.statSync './README.md'
+            resultStats = fs.statSync './up/file'
+            resultStats.size.should.equal fileStats.size
+
+
 describe "Basic authentication", ->
 
     describe "authentified client.get", ->
@@ -557,3 +642,26 @@ describe "Set header on request", ->
     it "Then I get msg: ok as answer.", ->
         should.exist @body.msg
         @body.msg.should.equal "ok"
+
+describe "Request an https server", ->
+
+    describe "client.get", ->
+
+        before ->
+            @client = request.newClient "https://localhost:8889/"
+            @serverGet = fakeServerRawHttps 200, msg: 'https ok'
+            @serverGet.listen 8889
+
+        after ->
+            @serverGet.close()
+
+        it "When I send get request to server", (done) ->
+            @client.get "/", (error, response, body) =>
+                should.not.exist error
+                response.statusCode.should.be.equal 200
+                @body = body
+                done()
+
+        it "Then I get msg: ok as answer.", ->
+            should.exist @body.msg
+            @body.msg.should.equal "https ok"

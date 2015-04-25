@@ -17,7 +17,7 @@
       "url": "https://github.com/frankrousseau/request-json-light/blob/master/LICENSE"
     }
   ],
-  "version": "0.5.2",
+  "version": "0.5.16",
   "homepage": "https://github.com/frankrousseau/request-json-light/",
   "bugs": {
     "url": "https://github.com/frankrousseau/request-json-light/issues"
@@ -34,11 +34,12 @@
     "Benjamin Woodruff"
   ],
   "engines": {
-    "node": ">=1.10.0"
+    "node": ">= 0.10.0"
   },
   "main": "./main.js",
   "dependencies": {
-    "form-data": "0.1.4"
+    "form-data": "0.1.4",
+    "mime": "^1.2.11"
   },
   "devDependencies": {
     "coffee-script": "1.7.1",
@@ -49,8 +50,9 @@
     "connect-multiparty": "1.0.4"
   },
   "scripts": {
-    "prepublish": "cake build",
-    "test": "cake tests"
+    "prepublish": "npm run build",
+    "build": "coffee -cb main.coffee",
+    "test": "mocha tests.coffee --reporter spec --compilers coffee:coffee-script/register --colors"
   },
   "repository": {
     "type": "git",

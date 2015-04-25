@@ -124,6 +124,11 @@ module.exports =
         playRequest opts, data, callback
 
 
+    head: (opts, data, callback) ->
+        opts.method = "HEAD"
+        playRequest opts, data, callback
+
+
 # Small HTTP client for easy json interactions with Cozy backends.
 class JsonClient
 
@@ -207,6 +212,17 @@ class JsonClient
 
         opts = buildOptions @options, @headers, @host, path, options
         module.exports.del opts, null, callback
+
+
+    # Send a HEAD request to path with given JSON as body.
+    head: (path, data, options, callback, parse = true) ->
+        if typeof options is 'function'
+            parse = callback if typeof callback is 'boolean'
+            callback = options
+            options = {}
+
+        opts = buildOptions @options, @headers, @host, path, options
+        module.exports.head opts, null, callback
 
 
     # Send a post request with file located at given path as attachment

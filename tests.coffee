@@ -10,13 +10,14 @@ request = require("./main")
 fakeServer = (json, code=200, callback=null) ->
     http.createServer (req, res) ->
         body = ""
+        res.setHeader 'headertest', 'header-value'
         req.on 'data', (chunk) ->
             body += chunk
         req.on 'end', ->
             res.writeHead code, 'Content-Type': 'application/json'
             body = JSON.parse(body) if body? and body
             callback(body, req) if callback?
-            res.end(JSON.stringify json)
+            res.end JSON.stringify json
 
 fakeServerRaw = (code, out) ->
      http.createServer (req, res) ->
@@ -141,6 +142,33 @@ describe "Common requests", ->
 
         it "Then I get 200 as answer", ->
             @response.statusCode.should.be.equal 200
+
+
+    describe "client.head", ->
+
+        before ->
+            @serverHead = fakeServer msg:"ok", 200, (body, req) ->
+                req.method.should.equal "HEAD"
+                req.url.should.equal "/test-path/124"
+            @serverHead.listen 8888
+            @client = request.newClient "http://localhost:8888/"
+
+        after ->
+            @serverHead.close()
+
+
+        it "When I send head request to server", (done) ->
+            data = headData: "head data test"
+            @client.head "test-path/124", data, (error, response, body) =>
+                @response = response
+
+                done()
+
+        it "Then I get 200 as answer", ->
+            @response.statusCode.should.be.equal 200
+            should.not.exist @response.body
+            @response.headers.headertest.should.equal 'header-value'
+
 
     describe "client.del", ->
 

@@ -75,13 +75,17 @@ playRequest = (opts, data, callback, parse=true) ->
         data = {}
 
     if data?
+        encoding = opts.encoding or 'utf8'
+        # convert data to a buffer
         if typeof data is 'string'
-            length = data.length
-        else
-            length = JSON.stringify(data).length
-        opts.headers['Content-Length'] = length
+            data = new Buffer data, encoding
+        else unless data instanceof Buffer
+            data = new Buffer(JSON.stringify(data), encoding)
+        opts.headers['Content-Length'] = data.length
+
     else
         delete opts.headers['Content-Length']
+        # remove the default 'application/json' header
         if opts.headers['content-type'] is 'application/json'
             delete opts.headers['content-type']
 
@@ -97,7 +101,7 @@ playRequest = (opts, data, callback, parse=true) ->
     req.on 'error', (err) ->
         callback err
 
-    req.write JSON.stringify data if data?
+    req.write data if data?
     req.end()
 
 

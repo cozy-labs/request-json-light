@@ -227,6 +227,11 @@ class JsonClient
         module.exports.del opts, null, callback, parse
 
 
+    # Alias for del function
+    delete: (path, options, callback, parse=true) ->
+        @del path, options, callback, parse
+
+
     # Send a HEAD request to path with given JSON as body.
     head: (path, data, options, callback, parse = true) ->
         if typeof options is 'function'

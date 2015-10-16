@@ -303,10 +303,10 @@ class JsonClient
     # Do not use form, file is sent directly
     putFile: (path, file, callback, parse=true) ->
         opts = buildOptions @options, @headers, @host, path, method: 'PUT'
-        opts.headers['content-type'] = mime.lookup file
 
         # file is a string so it is a file path
         if typeof file is "string"
+            opts.headers['content-type'] = mime.lookup file
             fileStream = fs.createReadStream(file)
 
         # file is not a string so it should be a stream.

@@ -5,7 +5,7 @@ but if you deal only with JSON, things could be more straightforward. This lib
 aims to simplify Request usage for JSON only requests. The API is simpler and
 it comes with very few dependencies.
 
-If you want a more featured version of this lib, have a look at 
+If you want a more featured version of this lib, have a look at
 [request-json](https://github.com/cozy/request-json) which is based on request
 and that way provides as many features (but with more dependencies!).
 

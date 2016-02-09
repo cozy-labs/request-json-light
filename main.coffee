@@ -99,6 +99,9 @@ playRequest = (opts, data, callback, parse=true) ->
             parseBody null, res, body, callback, parse
 
     req.on 'error', (err) ->
+        err.message = """
+          #{err.code} on #{opts.method} #{opts.protocol}://#{opts.host}#{opts.port}#{opts.path}
+        """
         callback err
 
     req.write data if data?

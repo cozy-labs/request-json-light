@@ -59,7 +59,7 @@ parseBody =  (error, response, body, callback, parse=true) ->
         try
             parsed = JSON.parse body
         catch err
-            error ?= new Error("Parsing error : #{err.message}, body= \n #{body}")
+            error ?= new Error("Parsing error: #{err.message}, body=\n#{body}")
             parsed = body
 
     else parsed = body
@@ -99,6 +99,9 @@ playRequest = (opts, data, callback, parse=true) ->
             parseBody null, res, body, callback, parse
 
     req.on 'error', (err) ->
+        err.message = """
+          #{err.code} on #{opts.method} #{opts.protocol}://#{opts.host}#{opts.port}#{opts.path}
+        """
         callback err
 
     req.write data if data?
@@ -261,7 +264,8 @@ class JsonClient
 
         # files is not a string and is not an array so it is a stream
         else if not Array.isArray files
-            files.path = files.path || "useless_But_Required_String" #require by formData
+            # A path is required by formData
+            files.path = files.path or "useless_But_Required_String"
             form.append "file", files
 
         # files is an array of strings and streams

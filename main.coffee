@@ -1,9 +1,9 @@
-FormData = require "form-data"
-fs = require "fs"
-url = require "url"
+FormData = require 'form-data'
+fs = require 'fs'
+url = require 'url'
 http = require 'http'
 https = require 'https'
-mime = require "mime"
+mime = require 'mime'
 querystring = require 'querystring'
 
 
@@ -155,19 +155,19 @@ class JsonClient
     constructor: (@host, @options = {}) ->
         @headers = @options.headers ? {}
         @headers['accept'] = 'application/json'
-        @headers['user-agent'] = "request-json/1.0"
+        @headers['user-agent'] = 'request-json/1.0'
         @headers['content-type'] = 'application/json'
 
     # Set basic authentication on each requests
     setBasicAuth: (username, password) ->
         credentials = "#{username}:#{password}"
         basicCredentials = new Buffer(credentials).toString('base64')
-        @headers["authorization"] = "Basic #{basicCredentials}"
+        @headers['authorization'] = 'Basic #{basicCredentials}'
 
 
     # Add a token to request header.
     setToken: (token) ->
-        @headers["x-auth-token"] = token
+        @headers['x-auth-token'] = token
 
 
     # Send a GET request to path. Parse response body to obtain a JS object.
@@ -250,31 +250,31 @@ class JsonClient
     # Send a post request with file located at given path as attachment
     # (multipart form)
     sendFile: (path, files, data, callback, parse=true) ->
-        callback = data if typeof(data) is "function"
+        callback = data if typeof(data) is 'function'
 
         form = new FormData()
 
         # Append fields to form.
-        unless typeof(data) is "function"
+        unless typeof(data) is 'function'
             for att of data
                 form.append att, data[att]
 
         # files is a string so it is a file path
-        if typeof files is "string"
-            form.append "file", fs.createReadStream files
+        if typeof files is 'string'
+            form.append 'file', fs.createReadStream files
 
         # files is not a string and is not an array so it is a stream
         else if not Array.isArray files
             # A path is required by formData
-            files.path = files.path or "useless_But_Required_String"
-            form.append "file", files
+            files.path = files.path or 'useless_But_Required_String'
+            form.append 'file', files
 
         # files is an array of strings and streams
         else
             index = 0
             for file in files
                 index++
-                if typeof file is "string"
+                if typeof file is 'string'
                     form.append "file#{index}", fs.createReadStream(file)
                 else
                     form.append "file#{index}", file
@@ -310,7 +310,7 @@ class JsonClient
         opts = buildOptions @options, @headers, @host, path, method: 'PUT'
 
         # file is a string so it is a file path
-        if typeof file is "string"
+        if typeof file is 'string'
             opts.headers['content-type'] = mime.lookup file
             fileStream = fs.createReadStream(file)
 
@@ -357,7 +357,7 @@ class JsonClient
     saveFileAsStream: (path, callback) ->
         options = {}
         opts = buildOptions @options, @headers, @host, path, options
-        opts.option = "GET"
+        opts.option = 'GET'
 
         req =  opts.requestFactory.request opts, (res) ->
             callback null, res

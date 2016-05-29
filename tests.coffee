@@ -1,13 +1,13 @@
 should = require('chai').Should()
-http = require "http"
-https = require "https"
+http = require 'http'
+https = require 'https'
 path = require 'path'
 querystring = require 'querystring'
-express = require "express"
-fs = require "fs"
+express = require 'express'
+fs = require 'fs'
 bodyParser = require 'body-parser'
 multiparty = require 'connect-multiparty'
-request = require("./main")
+request = require('./main')
 
 
 fakeServer = (json, code=200, callback=null) ->

@@ -56,7 +56,7 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
 # Parse body assuming the body is a json object. Send an error if the body
 # can't be parsed.
 parseBody =  (error, response, body, callback, parse=true) ->
-    if typeof body is "string" and body isnt "" and parse
+    if typeof body is 'string' and body isnt '' and parse
         try
             parsed = JSON.parse body
         catch err
@@ -118,32 +118,32 @@ module.exports =
 
 
     get: (opts, data, callback, parse) ->
-        opts.method = "GET"
+        opts.method = 'GET'
         playRequest opts, data, callback, parse
 
 
     del: (opts, data, callback, parse) ->
-        opts.method = "DELETE"
+        opts.method = 'DELETE'
         playRequest opts, data, callback, parse
 
 
     post: (opts, data, callback, parse) ->
-        opts.method = "POST"
+        opts.method = 'POST'
         playRequest opts, data, callback, parse
 
 
     put: (opts, data, callback, parse) ->
-        opts.method = "PUT"
+        opts.method = 'PUT'
         playRequest opts, data, callback, parse
 
 
     patch: (opts, data, callback, parse) ->
-        opts.method = "PATCH"
+        opts.method = 'PATCH'
         playRequest opts, data, callback, parse
 
 
     head: (opts, data, callback) ->
-        opts.method = "HEAD"
+        opts.method = 'HEAD'
         playRequest opts, data, callback
 
 
@@ -162,7 +162,7 @@ class JsonClient
     setBasicAuth: (username, password) ->
         credentials = "#{username}:#{password}"
         basicCredentials = new Buffer(credentials).toString('base64')
-        @headers['authorization'] = 'Basic #{basicCredentials}'
+        @headers['authorization'] = "Basic #{basicCredentials}"
 
 
     # Add a token to request header.
@@ -339,7 +339,7 @@ class JsonClient
     saveFile: (path, filePath, callback) ->
         options = {}
         opts = buildOptions @options, @headers, @host, path, options
-        opts.option = "GET"
+        opts.option = 'GET'
 
         req = opts.requestFactory.request opts, (res) ->
             fileStream = fs.createWriteStream filePath

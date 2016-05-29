@@ -12,7 +12,7 @@ request = require('./main')
 
 fakeServer = (json, code=200, callback=null) ->
     http.createServer (req, res) ->
-        body = ""
+        body = ''
         res.setHeader 'headertest', 'header-value'
         req.on 'data', (chunk) ->
             body += chunk
@@ -46,12 +46,13 @@ fakeDownloadServer = (url, path, callback= ->) ->
 fakeUploadServer = (url, dir, callback= -> ) ->
     app = express()
     fs.mkdirSync dir unless fs.existsSync dir
-    app.use bodyParser()
+    app.use bodyParser.urlencoded extended: true
+    app.use bodyParser.json()
     app.use multiparty uploadDir: dir
     app.post url, (req, res) ->
         for key, file of req.files
             fs.renameSync file.path, dir + '/' + file.name
-        res.send 201, creation: true, requestHeaders: req.headers
+        res.status(201).send creation: true, requestHeaders: req.headers
 
 rawBody = (req, res, next) ->
     req.setEncoding 'utf8'
@@ -68,286 +69,286 @@ fakePutServer = (url, dir, callback= -> ) ->
     app.put url, (req, res) ->
         fs.writeFile "#{dir}/file", req.rawBody, (err) ->
             unless err
-                res.send 201
+                res.sendStatus 201
 
-describe "Common requests", ->
+describe 'Common requests', ->
 
-    describe "client.get", ->
+    describe 'client.get', ->
 
         before ->
-            @serverGet = fakeServer msg:"ok", 200, (body, req) ->
-                req.method.should.equal "GET"
-                req.url.should.equal  "/test-path/"
+            @serverGet = fakeServer msg:'ok', 200, (body, req) ->
+                req.method.should.equal 'GET'
+                req.url.should.equal  '/test-path/'
             @serverGet.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverGet.close()
 
-        it "When I send get request to server", (done) ->
-            @client.get "test-path/", (error, response, body) =>
+        it 'When I send get request to server', (done) ->
+            @client.get 'test-path/', (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
 
-    describe "client.post", ->
+    describe 'client.post', ->
 
         before ->
-            @serverPost = fakeServer msg:"ok", 201, (body, req) ->
+            @serverPost = fakeServer msg:'ok', 201, (body, req) ->
                 should.exist body.postData
-                req.method.should.equal "POST"
-                req.url.should.equal  "/test-path/"
+                req.method.should.equal 'POST'
+                req.url.should.equal  '/test-path/'
             @serverPost.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverPost.close()
 
-        it "When I send post request to server", (done) ->
-            data = postData: "data test"
-            @client.post "test-path/", data, (error, response, body) =>
+        it 'When I send post request to server', (done) ->
+            data = postData: 'data test'
+            @client.post 'test-path/', data, (error, response, body) =>
                 should.not.exist error
                 @response = response
                 @body = body
                 done()
 
-        it "Then I get 201 as answer", ->
+        it 'Then I get 201 as answer', ->
             @response.statusCode.should.be.equal 201
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
 
-    describe "client.put", ->
+    describe 'client.put', ->
 
         before ->
-            @serverPut = fakeServer msg:"ok", 200, (body, req) ->
+            @serverPut = fakeServer msg:'ok', 200, (body, req) ->
                 should.exist body.putData
-                req.method.should.equal "PUT"
-                req.url.should.equal  "/test-path/123"
+                req.method.should.equal 'PUT'
+                req.url.should.equal  '/test-path/123'
             @serverPut.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverPut.close()
 
 
-        it "When I send put request to server", (done) ->
-            data = putData: "data test"
-            @client.put "test-path/123", data, (error, response, body) =>
+        it 'When I send put request to server', (done) ->
+            data = putData: 'data test'
+            @client.put 'test-path/123', data, (error, response, body) =>
                 @response = response
                 done()
 
-        it "Then I get 200 as answer", ->
+        it 'Then I get 200 as answer', ->
             @response.statusCode.should.be.equal 200
 
 
-    describe "client.patch", ->
+    describe 'client.patch', ->
 
         before ->
-            @serverPatch = fakeServer msg:"ok", 200, (body, req) ->
+            @serverPatch = fakeServer msg:'ok', 200, (body, req) ->
                 should.exist body.patchData
-                req.method.should.equal "PATCH"
-                req.url.should.equal  "/test-path/123"
+                req.method.should.equal 'PATCH'
+                req.url.should.equal  '/test-path/123'
             @serverPatch.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverPatch.close()
 
 
-        it "When I send patch request to server", (done) ->
-            data = patchData: "data test"
-            @client.patch "test-path/123", data, (error, response, body) =>
+        it 'When I send patch request to server', (done) ->
+            data = patchData: 'data test'
+            @client.patch 'test-path/123', data, (error, response, body) =>
                 @response = response
                 done()
 
-        it "Then I get 200 as answer", ->
+        it 'Then I get 200 as answer', ->
             @response.statusCode.should.be.equal 200
 
 
-    describe "client.head", ->
+    describe 'client.head', ->
 
         before ->
-            @serverHead = fakeServer msg:"ok", 200, (body, req) ->
-                req.method.should.equal "HEAD"
-                req.url.should.equal "/test-path/124"
+            @serverHead = fakeServer msg:'ok', 200, (body, req) ->
+                req.method.should.equal 'HEAD'
+                req.url.should.equal '/test-path/124'
             @serverHead.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverHead.close()
 
 
-        it "When I send head request to server", (done) ->
-            data = headData: "head data test"
-            @client.head "test-path/124", data, (error, response, body) =>
+        it 'When I send head request to server', (done) ->
+            data = headData: 'head data test'
+            @client.head 'test-path/124', data, (error, response, body) =>
                 @response = response
 
                 done()
 
-        it "Then I get 200 as answer", ->
+        it 'Then I get 200 as answer', ->
             @response.statusCode.should.be.equal 200
             should.not.exist @response.body
             @response.headers.headertest.should.equal 'header-value'
 
 
-    describe "client.del", ->
+    describe 'client.del', ->
 
         before ->
-            @serverPut = fakeServer msg:"ok", 204, (body, req) ->
-                req.method.should.equal "DELETE"
-                req.url.should.equal  "/test-path/123"
+            @serverPut = fakeServer msg:'ok', 204, (body, req) ->
+                req.method.should.equal 'DELETE'
+                req.url.should.equal  '/test-path/123'
             @serverPut.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverPut.close()
 
-        it "When I send delete request to server", (done) ->
-            @client.del "test-path/123", (error, response, body) =>
+        it 'When I send delete request to server', (done) ->
+            @client.del 'test-path/123', (error, response, body) =>
                 @response = response
                 done()
 
-        it "Then I get 204 as answer", ->
+        it 'Then I get 204 as answer', ->
             @response.statusCode.should.be.equal 204
 
-    describe "client.put followed by client.del", ->
+    describe 'client.put followed by client.del', ->
 
         before ->
-            @client = request.newClient "http://localhost:8888/"
-            @serverPut = fakeServer msg:"ok", 204, (body, req) ->
-                if req.method is "PUT"
+            @client = request.newClient 'http://localhost:8888/'
+            @serverPut = fakeServer msg:'ok', 204, (body, req) ->
+                if req.method is 'PUT'
                     should.exist body.putData
-                if req.method is "DELETE"
+                if req.method is 'DELETE'
                     should.not.exist body.putData
-                req.url.should.equal  "/test-path/123"
+                req.url.should.equal  '/test-path/123'
             @serverPut.listen 8888
 
         after ->
             @serverPut.close()
 
-        it "When I send put request to server", (done) ->
-            data = putData: "data test"
-            @client.put "test-path/123", data, (error, response, body) =>
+        it 'When I send put request to server', (done) ->
+            data = putData: 'data test'
+            @client.put 'test-path/123', data, (error, response, body) =>
                 @response = response
                 done()
 
-        it "And then send delete request to server", (done) ->
-            @client.del "test-path/123", (error, response, body) =>
+        it 'And then send delete request to server', (done) ->
+            @client.del 'test-path/123', (error, response, body) =>
                 @response = response
                 done()
 
-        it "Then I get 204 as answer", ->
+        it 'Then I get 204 as answer', ->
             @response.statusCode.should.be.equal 204
 
-    describe "client.get followed by client.post", ->
+    describe 'client.get followed by client.post', ->
         before ->
             first = true
-            @server = fakeServer msg:"ok", 200, (body, req) ->
+            @server = fakeServer msg:'ok', 200, (body, req) ->
                 if first
                     first = false
-                    req.method.should.equal "GET"
+                    req.method.should.equal 'GET'
                 else
-                    req.method.should.equal "POST"
+                    req.method.should.equal 'POST'
                     req.headers.should.have.property 'content-type'
                     contentType = req.headers['content-type']
                     contentType.should.equal 'application/json'
 
             @server.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @server.close()
 
-        it "When I send get request to server", (done) ->
-            @client.get "test-path/123", (error, response, body) ->
+        it 'When I send get request to server', (done) ->
+            @client.get 'test-path/123', (error, response, body) ->
                 done()
 
-        it "And then send delete request to server", (done) ->
-            @client.post "test-path/123", (error, response, body) ->
+        it 'And then send delete request to server', (done) ->
+            @client.post 'test-path/123', (error, response, body) ->
                 done()
 
 
-describe "Parsing edge cases", ->
+describe 'Parsing edge cases', ->
 
-    describe "no body on 204", ->
+    describe 'no body on 204', ->
 
         before ->
             @server = fakeServerRaw 204, ''
             @server.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @server.close()
 
         it 'should not throw', (done) ->
-            @client.del "test-path/", (error, response, body) ->
+            @client.del 'test-path/', (error, response, body) ->
                 should.not.exist error
                 response.statusCode.should.be.equal 204
                 body.should.equal ''
                 done()
 
-    describe "invalid json", ->
+    describe 'invalid json', ->
 
         before ->
             @server = fakeServerRaw 200, '{"this:"isnotjson}'
             @server.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @server.close()
 
         it 'should throw', (done) ->
-            @client.get "test-path/", (error, response, body) ->
+            @client.get 'test-path/', (error, response, body) ->
                 should.exist error
                 should.exist body
                 body.should.be.equal '{"this:"isnotjson}'
                 error.message.should.have.string '{"this:"isnotjson}'
                 done()
 
-describe "Files", ->
+describe 'Files', ->
 
-    describe "client.saveFile", ->
+    describe 'client.saveFile', ->
 
         before ->
             @app = fakeDownloadServer '/test-file', './README.md'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I attempt to save file", (done) ->
+        it 'When I attempt to save file', (done) ->
             @client.saveFile 'test-file', './dl-README.md', \
                              (error, response, body) ->
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './dl-README.md'
             resultStats.size.should.equal fileStats.size
 
-    describe "client.saveFileAsStream", ->
+    describe 'client.saveFileAsStream', ->
 
         before ->
             @app = fakeDownloadServer '/test-file', './README.md'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './dl-README.md'
             @server.close()
 
-        it "When I attempt to save file via a stream", (done) ->
+        it 'When I attempt to save file via a stream', (done) ->
             @client.saveFileAsStream 'test-file', (err, stream) ->
                 should.not.exist err
                 stream.statusCode.should.be.equal 200
@@ -356,25 +357,25 @@ describe "Files", ->
                 fsPipe.on 'finish', ->
                     done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './dl-README.md'
             resultStats.size.should.equal fileStats.size
 
 
-    describe "client.sendFile", ->
+    describe 'client.sendFile', ->
 
         before ->
             @app = fakeUploadServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './up/README.md'
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send post request to server", (done) ->
+        it 'When I send post request to server', (done) ->
             file = './README.md'
             @client.setBasicAuth 'a', 'b'
             @client.sendFile 'test-file', file, (error, response, body) ->
@@ -384,42 +385,42 @@ describe "Files", ->
                 body.requestHeaders['authorization'].should.equal 'Basic YTpi'
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/README.md'
             resultStats.size.should.equal fileStats.size
 
-    describe "client.sendFileFromStream", ->
+    describe 'client.sendFileFromStream', ->
 
         before ->
             @app = fakeUploadServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './up/README.md'
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send post request to server", (done) ->
+        it 'When I send post request to server', (done) ->
             @file = fs.createReadStream './README.md'
             @client.sendFile 'test-file', @file, (error, response, body) ->
                 should.not.exist error
                 response.statusCode.should.be.equal 201
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/README.md'
             resultStats.size.should.equal fileStats.size
 
 
-    describe "client.sendManyFiles", ->
+    describe 'client.sendManyFiles', ->
 
         before ->
             @app = fakeUploadServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './up/README.md'
@@ -427,7 +428,7 @@ describe "Files", ->
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send post request to server", (done) ->
+        it 'When I send post request to server', (done) ->
             @file = './README.md'
             @file2 = './package.json'
             files = [@file, @file2]
@@ -436,7 +437,7 @@ describe "Files", ->
                 response.statusCode.should.be.equal 201
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/README.md'
             resultStats.size.should.equal fileStats.size
@@ -444,12 +445,12 @@ describe "Files", ->
             resultStats = fs.statSync './up/package.json'
             resultStats.size.should.equal fileStats.size
 
-    describe "client.sendManyFilesMixingStreamAndPaths", ->
+    describe 'client.sendManyFilesMixingStreamAndPaths', ->
 
         before ->
             @app = fakeUploadServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './up/README.md'
@@ -457,7 +458,7 @@ describe "Files", ->
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send post request to server", (done) ->
+        it 'When I send post request to server', (done) ->
             @file = './README.md'
             @file2 = fs.createReadStream './package.json'
             files = [@file, @file2]
@@ -466,7 +467,7 @@ describe "Files", ->
                 response.statusCode.should.be.equal 201
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/README.md'
             resultStats.size.should.equal fileStats.size
@@ -474,12 +475,12 @@ describe "Files", ->
             resultStats = fs.statSync './up/package.json'
             resultStats.size.should.equal fileStats.size
 
-    describe "client.sendManyFilesFromStream", ->
+    describe 'client.sendManyFilesFromStream', ->
 
         before ->
             @app = fakeUploadServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             fs.unlinkSync './up/README.md'
@@ -487,7 +488,7 @@ describe "Files", ->
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send post request to server", (done) ->
+        it 'When I send post request to server', (done) ->
             @file = fs.createReadStream './README.md'
             @file2 = fs.createReadStream './package.json'
             files = [@file, @file2]
@@ -496,7 +497,7 @@ describe "Files", ->
                 response.statusCode.should.be.equal 201
                 done()
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/README.md'
             resultStats.size.should.equal fileStats.size
@@ -504,12 +505,12 @@ describe "Files", ->
             resultStats = fs.statSync './up/package.json'
             resultStats.size.should.equal fileStats.size
 
-    describe "client.putFile", ->
+    describe 'client.putFile', ->
 
         before ->
             @app = fakePutServer '/test-file', './up'
             @server = @app.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             for name in fs.readdirSync './up'
@@ -517,7 +518,7 @@ describe "Files", ->
             fs.rmdirSync './up'
             @server.close()
 
-        it "When I send put request to server", (done) ->
+        it 'When I send put request to server', (done) ->
             file = './README.md'
             @client.putFile 'test-file', file, (error, response, body) ->
                 should.not.exist error
@@ -525,171 +526,171 @@ describe "Files", ->
                 done()
             , false
 
-        it "Then I receive the correct file", ->
+        it 'Then I receive the correct file', ->
             fileStats = fs.statSync './README.md'
             resultStats = fs.statSync './up/file'
             resultStats.size.should.equal fileStats.size
 
 
-describe "Basic authentication", ->
+describe 'Basic authentication', ->
 
-    describe "authentified client.get", ->
+    describe 'authentified client.get', ->
 
         before ->
-            @serverGet = fakeServer msg:"ok", 200, (body, req) ->
+            @serverGet = fakeServer msg:'ok', 200, (body, req) ->
                 auth = req.headers.authorization.split(' ')[1]
                 auth = new Buffer(auth, 'base64').toString('ascii')
                 auth.should.equal 'john:secret'
-                req.method.should.equal "GET"
-                req.url.should.equal  "/test-path/"
+                req.method.should.equal 'GET'
+                req.url.should.equal  '/test-path/'
             @serverGet.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverGet.close()
 
-        it "When I send get request to server", (done) ->
+        it 'When I send get request to server', (done) ->
             @client.setBasicAuth 'john', 'secret'
-            @client.get "test-path/", (error, response, body) =>
+            @client.get 'test-path/', (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
 
-describe "Set token", ->
+describe 'Set token', ->
 
-    describe "authentified client.get", ->
+    describe 'authentified client.get', ->
 
         before ->
-            @serverGet = fakeServer msg:"ok", 200, (body, req) ->
+            @serverGet = fakeServer msg:'ok', 200, (body, req) ->
                 token = req.headers['x-auth-token']
                 token.should.equal 'cozy'
-                req.method.should.equal "GET"
-                req.url.should.equal  "/test-path/"
+                req.method.should.equal 'GET'
+                req.url.should.equal  '/test-path/'
             @serverGet.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverGet.close()
 
-        it "When I send setToken request", (done) ->
+        it 'When I send setToken request', (done) ->
             @client.setToken 'cozy'
-            @client.get "test-path/", (error, response, body) =>
+            @client.get 'test-path/', (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
-    describe "authentified client.post", ->
+    describe 'authentified client.post', ->
 
         before ->
-            @serverPost = fakeServer msg:"ok", 200, (body, req) ->
+            @serverPost = fakeServer msg:'ok', 200, (body, req) ->
                 token = req.headers['x-auth-token']
                 token.should.equal 'cozy'
                 should.exist body.postData
-                req.method.should.equal "POST"
-                req.url.should.equal  "/test-path/"
+                req.method.should.equal 'POST'
+                req.url.should.equal  '/test-path/'
             @serverPost.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverPost.close()
 
-        it "When I send setToken request", (done) ->
+        it 'When I send setToken request', (done) ->
             @client.setToken 'cozy'
-            data = postData:"data test"
-            @client.post "test-path/", data, (error, response, body) =>
+            data = postData:'data test'
+            @client.post 'test-path/', data, (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
-describe "Set header on request", ->
+describe 'Set header on request', ->
 
     before ->
-        @serverReq = fakeServer msg:"ok", 200, (body, req) ->
+        @serverReq = fakeServer msg:'ok', 200, (body, req) ->
             contentType = req.headers['content-type']
             contentType.should.equal 'application/json-patch+json'
             req.method.should.equal 'PATCH'
-            req.url.should.equal  "/test-path/"
+            req.url.should.equal  '/test-path/'
         @serverReq.listen 8888
-        @client = request.newClient "http://localhost:8888/"
+        @client = request.newClient 'http://localhost:8888/'
 
     after ->
         @serverReq.close()
 
-    it "When I send a patch with a custom content type", (done) ->
+    it 'When I send a patch with a custom content type', (done) ->
         options = { headers: {} }
         options.headers['content-type'] = 'application/json-patch+json'
-        @client.patch "test-path/", {}, options, (error, response, body) =>
+        @client.patch 'test-path/', {}, options, (error, response, body) =>
             should.not.exist error
             response.statusCode.should.be.equal 200
             @body = body
             done()
 
-    it "Then I get msg: ok as answer.", ->
+    it 'Then I get msg: ok as answer.', ->
         should.exist @body.msg
-        @body.msg.should.equal "ok"
+        @body.msg.should.equal 'ok'
 
-describe "Request an https server", ->
+describe 'Request an https server', ->
 
-    describe "client.get", ->
+    describe 'client.get', ->
 
         before ->
-            @client = request.newClient "https://localhost:8889/"
+            @client = request.newClient 'https://localhost:8889/'
             @serverGet = fakeServerRawHttps 200, msg: 'https ok'
             @serverGet.listen 8889
 
         after ->
             @serverGet.close()
 
-        it "When I send get request to server", (done) ->
-            @client.get "/", (error, response, body) =>
+        it 'When I send get request to server', (done) ->
+            @client.get '/', (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "https ok"
+            @body.msg.should.equal 'https ok'
 
-describe "Request with unescaped characters", ->
+describe 'Request with unescaped characters', ->
 
-    describe "client.get", ->
+    describe 'client.get', ->
 
         before ->
-            @serverGet = fakeServer msg:"ok", 200, (body, req) ->
-                req.method.should.equal "GET"
-                querystring.unescape(req.url).should.equal  "/test-path & ~ /"
+            @serverGet = fakeServer msg:'ok', 200, (body, req) ->
+                req.method.should.equal 'GET'
+                querystring.unescape(req.url).should.equal  '/test-path & ~ /'
             @serverGet.listen 8888
-            @client = request.newClient "http://localhost:8888/"
+            @client = request.newClient 'http://localhost:8888/'
 
         after ->
             @serverGet.close()
 
-        it "When I send get request to server", (done) ->
-            @client.get "/test-path & ~ /", (error, response, body) =>
+        it 'When I send get request to server', (done) ->
+            @client.get '/test-path & ~ /', (error, response, body) =>
                 should.not.exist error
                 response.statusCode.should.be.equal 200
                 @body = body
                 done()
 
-        it "Then I get msg: ok as answer.", ->
+        it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
-            @body.msg.should.equal "ok"
+            @body.msg.should.equal 'ok'
 
 

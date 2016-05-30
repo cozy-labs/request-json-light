@@ -12,7 +12,7 @@
     "utility"
   ],
   "license": "MIT",
-  "version": "0.5.23",
+  "version": "0.5.24",
   "homepage": "https://github.com/cozy-labs/request-json-light/",
   "bugs": {
     "url": "https://github.com/cozy-labs/request-json-light/issues"

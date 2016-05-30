@@ -4,7 +4,6 @@ url = require 'url'
 http = require 'http'
 https = require 'https'
 mime = require 'mime'
-querystring = require 'querystring'
 
 
 # Merge two objects in one. Values from the second object win over the first
@@ -43,7 +42,7 @@ buildOptions = (clientOptions, clientHeaders, host, path, requestOptions) ->
     options.host = urlData.host.split(':')[0]
     options.port = urlData.port
     options.protocol = urlData.protocol
-    options.path = querystring.escape(path).replace /%2F/g, '/'
+    options.path = path
     if urlData.protocol is 'https:'
         options.requestFactory = https
         options.rejectUnauthorized = false
@@ -101,7 +100,7 @@ playRequest = (opts, data, callback, parse=true) ->
 
     req.on 'error', (err) ->
         err.message = """
-#{err.code} on #{opts.method} #{opts.protocol}://#{opts.host}#{opts.port}#{opts.path}
+          #{err.code} on #{opts.method} #{opts.protocol}://#{opts.host}#{opts.port}#{opts.path}
         """
         callback err
 

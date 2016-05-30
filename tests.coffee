@@ -2,7 +2,6 @@ should = require('chai').Should()
 http = require 'http'
 https = require 'https'
 path = require 'path'
-querystring = require 'querystring'
 express = require 'express'
 fs = require 'fs'
 bodyParser = require 'body-parser'
@@ -667,30 +666,4 @@ describe 'Request an https server', ->
         it 'Then I get msg: ok as answer.', ->
             should.exist @body.msg
             @body.msg.should.equal 'https ok'
-
-describe 'Request with unescaped characters', ->
-
-    describe 'client.get', ->
-
-        before ->
-            @serverGet = fakeServer msg:'ok', 200, (body, req) ->
-                req.method.should.equal 'GET'
-                querystring.unescape(req.url).should.equal  '/test-path & ~ /'
-            @serverGet.listen 8888
-            @client = request.newClient 'http://localhost:8888/'
-
-        after ->
-            @serverGet.close()
-
-        it 'When I send get request to server', (done) ->
-            @client.get '/test-path & ~ /', (error, response, body) =>
-                should.not.exist error
-                response.statusCode.should.be.equal 200
-                @body = body
-                done()
-
-        it 'Then I get msg: ok as answer.', ->
-            should.exist @body.msg
-            @body.msg.should.equal 'ok'
-
 

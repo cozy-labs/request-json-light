@@ -18,7 +18,7 @@ Add it to your package.json file or run in your project folder:
 ## How it works
 
 ```javascript
-request = require('request-json-light');
+var request = require('request-json-light');
 var client = request.newClient('http://localhost:8888/');
 
 var data = {
